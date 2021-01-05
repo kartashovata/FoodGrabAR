@@ -12,6 +12,18 @@ public class Player : MonoBehaviour
     public void AddScore(int score)
     {
         _score+=score;
+
+        if (_score < 0)
+        {
+            _score = 0;
+        }
+
+        ScoreChanged?.Invoke(_score);
+    }
+
+    public void ZeroScore()
+    {
+        _score = 0;
         ScoreChanged?.Invoke(_score);
     }
 }

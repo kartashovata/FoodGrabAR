@@ -6,36 +6,91 @@ public class CollectibleSpawner : MonoBehaviour
 {
     [SerializeField] private Player _player;
     [SerializeField] private float _spawnRadius;
-    [SerializeField] private float _secondsBetweenSpawn;
-    [SerializeField] private CollectibleObject[] _objects;
+    [SerializeField] private float _spawnDelaySec;
+    [SerializeField] private CollectibleObject[] _objectsToSpawn;
+    [SerializeField] private int _maxNumberOfSpawnedObjects = 100;
+
+    private float _timeAfterLastSpawn;
+    private bool _isSpawning;
 
     private void Start()
     {
-        StartCoroutine(SpawnRandomObject());
+        _timeAfterLastSpawn = 0;
+        _isSpawning = false;
     }
 
-    private IEnumerator SpawnRandomObject()
+    private void Update()
     {
-        while (true)
+        if (_isSpawning)
         {
-            CollectibleObject newObject = Instantiate(_objects[Random.Range(0, _objects.Length)], RandomPlaceInSphere(_spawnRadius), Quaternion.identity);
-            Vector3 lookDirection = _player.transform.position - newObject.transform.position;
-            newObject.transform.rotation = Quaternion.LookRotation(lookDirection);
-            newObject.Grabbed += OnObjectGrabbed;
+            _timeAfterLastSpawn += Time.deltaTime;
 
-            yield return new WaitForSeconds(_secondsBetweenSpawn);
+            if (_timeAfterLastSpawn >= _spawnDelaySec && transform.childCount <= _maxNumberOfSpawnedObjects)
+            {
+                SpawnRandomObject();
+                _timeAfterLastSpawn = 0;
+            }
+        }       
+    }
+
+    public void StartSpawning()
+    {
+        _isSpawning = true;
+    }
+
+    public void StopSpawning()
+    {
+        _isSpawning = false;
+    }
+
+    public void SetObjectsToSpawn(CollectibleObject[] objectsToSpawn)
+    {
+        _objectsToSpawn = objectsToSpawn;
+    }
+
+    private void SpawnRandomObject()
+    {
+        CollectibleObject newObject = Instantiate(_objectsToSpawn[Random.Range(0, _objectsToSpawn.Length)],_player.transform.position + RandomPlaceOnSphere(_spawnRadius), Quaternion.identity,gameObject.transform);
+        Vector3 lookDirection = _player.transform.position - newObject.transform.position;
+        newObject.transform.rotation = Quaternion.LookRotation(lookDirection);
+    }
+
+    public void Clear()
+    {
+        foreach(Transform child in transform) {
+            GameObject.Destroy(child.gameObject);
         }
     }
 
-    private Vector3 RandomPlaceInSphere(float radius)
+    private Vector3 RandomPlaceOnSphere(float radius)
     {
-        return Random.insideUnitSphere * radius;
+        return Random.onUnitSphere * radius;
+
     }
 
-    private void OnObjectGrabbed(CollectibleObject grabbedObject)
+    public void ConfigureAtLevelStart(Level level)
     {
-        grabbedObject.Grabbed -= OnObjectGrabbed;
+        foreach(CollectibleObject item in _objectsToSpawn)
+        {
+            item.SetReward(AssignReward(item,level));
+        }
 
-        _player.AddScore(grabbedObject.Reward);
+        StartSpawning();
+    }
+
+    private int AssignReward(CollectibleObject item, Level currentLevel)
+    {
+        if (currentLevel.GoodTypes.Contains(item.GetFoodType()))
+        {
+            return currentLevel.Reward;
+        }
+        else if (currentLevel.BadTypes.Contains(item.GetFoodType()))
+        {
+            return currentLevel.Fine;
+        }
+        else
+        {
+            return 0;
+        }
     }
 }

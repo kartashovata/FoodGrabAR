@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.XR.ARFoundation;
+using UnityEngine.Events;
 
 [RequireComponent(typeof(ARRaycastManager))]
 public class ObjectGrabber : MonoBehaviour
@@ -12,6 +13,8 @@ public class ObjectGrabber : MonoBehaviour
     private ARRaycastManager _arRaycastManager;
     private List<ARRaycastHit> _hits = new List<ARRaycastHit>();
 
+    public event UnityAction<CollectibleObject> Grabbed;
+
     private void Start()
     {
         _arRaycastManager = GetComponent<ARRaycastManager>();
@@ -20,7 +23,8 @@ public class ObjectGrabber : MonoBehaviour
 
     private void Update()
     {
-        ProcessTouch();
+        //ProcessTouch();
+        ProcessClick();
     }
 
     public void ProcessTouch()
@@ -43,12 +47,28 @@ public class ObjectGrabber : MonoBehaviour
         }
     }
 
-    public void GrabObject(CollectibleObject grabbedObject)
+    public void ProcessClick()
     {
-        _player.AddScore(grabbedObject.Reward);
-        grabbedObject.GetCollected();
-        
+        if (Input.GetMouseButtonDown(0))
+        {
+                Vector2 grabPoint = Input.mousePosition;
+                var ray = _camera.ScreenPointToRay(grabPoint);
+
+                if (Physics.Raycast(ray, out RaycastHit raycastHit))
+                {
+                    if (raycastHit.collider.gameObject.TryGetComponent(out CollectibleObject grabbedObject))
+                    {
+                        GrabObject(grabbedObject);
+                    }
+                }         
+        }
     }
 
-
+    public void GrabObject(CollectibleObject grabbedObject)
+    {
+        Debug.Log("GrabObject "+ grabbedObject.Reward);
+        _player.AddScore(grabbedObject.Reward);
+        grabbedObject.GetCollected();
+        Grabbed?.Invoke(grabbedObject);
+    }
 }
