@@ -5,13 +5,16 @@ using UnityEngine.XR.ARFoundation;
 using UnityEngine.Events;
 
 [RequireComponent(typeof(ARRaycastManager))]
+[RequireComponent(typeof(AudioSource))]
 public class ObjectGrabber : MonoBehaviour
 {
     [SerializeField] private Camera _camera;
     [SerializeField] private Player _player;
+    [SerializeField] private AudioClip _grabSound;
 
     private ARRaycastManager _arRaycastManager;
     private List<ARRaycastHit> _hits = new List<ARRaycastHit>();
+    private AudioSource _audioSource;
 
     public event UnityAction<CollectibleObject> Grabbed;
 
@@ -19,6 +22,7 @@ public class ObjectGrabber : MonoBehaviour
     {
         _arRaycastManager = GetComponent<ARRaycastManager>();
         _player = GetComponent<Player>();
+        _audioSource = GetComponent<AudioSource>();
     }
 
     private void Update()
@@ -66,9 +70,9 @@ public class ObjectGrabber : MonoBehaviour
 
     public void GrabObject(CollectibleObject grabbedObject)
     {
-        Debug.Log("GrabObject "+ grabbedObject.Reward);
         _player.AddScore(grabbedObject.Reward);
         grabbedObject.GetCollected();
         Grabbed?.Invoke(grabbedObject);
+        _audioSource.PlayOneShot(_grabSound);
     }
 }

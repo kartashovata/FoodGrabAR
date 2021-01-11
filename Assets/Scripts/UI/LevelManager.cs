@@ -10,7 +10,8 @@ public class LevelManager : MonoBehaviour
     [SerializeField] private MenuUI _menu;
     [SerializeField] private CollectibleSpawner _spawner;
 
-    private Level _currentLevel;
+    public Level CurrentLevel { get; private set; }
+
     private int _currentLevelNumber;
 
     private void OnEnable()
@@ -31,7 +32,7 @@ public class LevelManager : MonoBehaviour
 
     private void OnScoreChanged(int score)
     {
-        if (score >= _currentLevel.WinScore)
+        if (score >= CurrentLevel.WinScore)
         {
             FinishLevel();
         }
@@ -40,8 +41,8 @@ public class LevelManager : MonoBehaviour
     public void SetLevel(int index)
     {
         _currentLevelNumber = index;
-        _currentLevel = _levels[index];
-        _menu.SetLevelDetails(index, _currentLevel.Name, _currentLevel.Description);
+        CurrentLevel = _levels[index];
+        _menu.SetLevelDetails(index, CurrentLevel.Name, CurrentLevel.Description);
     }
 
     public void NextLevel()
@@ -62,7 +63,7 @@ public class LevelManager : MonoBehaviour
     {
         _player.ZeroScore();
         _spawner.Clear();
-        _spawner.ConfigureAtLevelStart(_currentLevel);
+        _spawner.ConfigureAtLevelStart(CurrentLevel);
     }
 
     public void FinishLevel()
@@ -70,6 +71,8 @@ public class LevelManager : MonoBehaviour
         _spawner.StopSpawning();
         NextLevel();
     }
+
+
 }
 
 [System.Serializable]
